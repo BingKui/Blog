@@ -37,7 +37,7 @@ module.exports = {
 			.sort({
 				_id: 1
 			})
-			.addCreateAt()
+			.addCreatedAt()
 			.contentToHtml()
 			.exec();
 	},

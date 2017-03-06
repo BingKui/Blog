@@ -49,6 +49,7 @@ module.exports = {
 				model: 'User'
 			})
 			.addCreatedAt()
+			.addCommentsCount()
 			.contentToHtml()
 			.exec();
 	},
@@ -67,6 +68,7 @@ module.exports = {
 				_id: -1
 			})
 			.addCreatedAt()
+			.addCommentsCount()
 			.contentToHtml()
 			.exec();
 	},

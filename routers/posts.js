@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const PostModel = require('../models/posts');
+const CommentModel = require('../models/comments');
 const checkLogin = require('../middlewares/check').checkLogin;
 
 router.get('/', (req, res, next) => {
@@ -54,13 +55,16 @@ router.get('/:postId', (req, res, next) => {
 	var postId = req.params.postId;
 
 	Promise.all([PostModel.getPostById(postId),
+			CommentModel.getComments(postId),
 			PostModel.incPv(postId)
 		])
 		.then((result) => {
 			let post = result[0];
+			let comments = result[1];
 			if (!post) throw new Error('No article');
 			res.render('post', {
-				post: post
+				post: post,
+				comments: comments
 			});
 		})
 		.catch(next);
@@ -111,11 +115,32 @@ router.get('/:postId/remove', checkLogin, (req, res, next) => {
 });
 //add a message
 router.post('/:postId/comment', checkLogin, (req, res, next) => {
-	res.send(req.flash());
+	let author = req.session.user._id;
+	let postId = req.params.postId;
+	let content = req.fields.content;
+	let comment = {
+		author: author,
+		postId: postId,
+		content: content
+	};
+	CommentModel.create(comment)
+		.then(() => {
+			req.flash('success', 'Message send success!');
+			res.redirect('back');
+		})
+		.catch(next);
 });
 //delete a message
 router.post('/:postId/comment/:commentId/remove', checkLogin, (req, res, next) => {
-	res.send(req.flash());
+	let commentId = req.params.commentId;
+	let author = req.session.user._id;
+
+	CommentModel.delCommentById(commentId, author)
+		.then(() => {
+			req.flash('success', 'Message delete success!')
+			res.redirect('back');
+		})
+		.catch(next);
 });
 
 module.exports = router;

@@ -7,6 +7,9 @@ const config = require('config-lite');
 const routes = require('./routers');
 const pkg = require('./package');
 
+const winston = require('winston');
+const expressWinston = require('express-winston');
+
 let app = express();
 
 app.set('views', path.join(__dirname, 'views'));
@@ -27,6 +30,7 @@ app.use(session({
 		url: config.mongodb
 	})
 }));
+console.log(config.mongodb);
 
 app.use(flash());
 // 处理表单及文件上传的中间件
@@ -45,8 +49,37 @@ app.use((req, res, next) => {
 	next();
 });
 
+//normal
+app.use(expressWinston.logger({
+	transports: [new(winston.transports.Console)({
+		json: true,
+		colorize: true
+	}), new winston.transports.File({
+		filename: 'logs/success.log'
+	})]
+}));
 routes(app);
+//error
+app.use(expressWinston.errorLogger({
+	transports: [new winston.transports.Console({
+		json: true,
+		colorize: true
+	}), new winston.transports.File({
+		filename: 'logs/error.log'
+	})]
+}));
 
-app.listen(config.port, () => {
-	console.log(`${pkg.name} listening on port ${config.port}`);
+//error page
+app.use((err, req, res, next) => {
+	res.render('error', {
+		error: err
+	});
 });
+
+if (module.parent) {
+	module.exports = app;
+} else {
+	app.listen(config.port, () => {
+		console.log(`${pkg.name} listening on port ${config.port}`);
+	});
+}
